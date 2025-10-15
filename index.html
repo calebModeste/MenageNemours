@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Présence</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        #app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type=email] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input[type=email]:focus {
+            outline: 2px solid #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        button:focus {
+            outline: 2px solid #45a049;
+            outline-offset: 2px;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+
+        a {
+            float: right;
+            text-align: right;
+            color: #2196F3;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: #1976D2;
+        }
+
+        a:focus {
+            outline: 2px solid #2196F3;
+            outline-offset: 2px;
+        }
+
+        .checkboxes {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .toast.success {
+            background-color: #4CAF50;
+        }
+
+        .toast.error {
+            background-color: #f44336;
+        }
+
+        .toast.warning {
+            background-color: #ff9800;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading spinner */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile optimization */
+        @media (max-width: 600px) {
+            body {
+                margin: 10px;
+            }
+
+            #app-container {
+                padding: 15px;
+            }
+
+            th, td {
+                padding: 8px 4px;
+                font-size: 14px;
+            }
+
+            input[type=radio] {
+                width: 18px;
+                height: 18px;
+            }
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        input[type=radio]:focus {
+            outline: 2px solid #4CAF50;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <h1>ADD NEMOURS Planning Ménage</h1>
+
+        <!-- Step 1: Email input -->
+        <div id="step1">
+            <label for="email">Entrez votre email :</label>
+            <input
+                type="email"
+                id="email"
+                placeholder="exemple@email.com"
+                required
+                aria-required="true"
+                aria-describedby="email-hint">
+            <span id="email-hint" class="sr-only">Entrez votre adresse email pour accéder au calendrier</span>
+            <button onclick="submitEmail()" id="submit-email-btn" aria-label="Valider l'email">
+                Valider
+            </button>
+        </div>
+
+        <!-- Step 2: Calendar appears -->
+        <div id="step2" style="display:none;">
+            <a href="https://docs.google.com/spreadsheets/d/1epaZZy5QTqZn0pNPfIPbpVgPynmI3e31-9vMy3O3oes/edit?gid=1021747688#gid=1021747688"
+               target="_blank"
+               rel="noopener noreferrer"
+               aria-label="Voir le planning annuel dans un nouvel onglet">
+                Planning
+                <br/>
+                annuel
+            </a>
+            <h2 id="calendar-title">Calendrier de Présence</h2>
+
+            <table role="grid" aria-labelledby="calendar-title">
+                <thead id="calendar-header">
+                    <!-- Column headers will be injected here -->
+                </thead>
+                <tbody id="calendar-body">
+                    <!-- Calendar row will be injected here -->
+                </tbody>
+            </table>
+            <button onclick="submitAttendance()" id="submit-attendance-btn" aria-label="Soumettre les présences">
+                Soumettre
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        "use strict";
+
+        // ============================================================================
+        // CONSTANTS
+        // ============================================================================
+
+        const CONFIG = {
+            API_URL: "https://sheetdb.io/api/v1/8sely4i5y3o5w",
+            TOAST_DURATION: 4000       // milliseconds
+        };
+
+        const ATTENDANCE_STATUS = {
+            ABSENT: 'Absent(e)',
+            PRESENT: 'Présent(e)',
+            EMPTY: ''
+        };
+
+        const TOAST_TYPES = {
+            SUCCESS: 'success',
+            ERROR: 'error',
+            WARNING: 'warning'
+        };
+
+        // ============================================================================
+        // STATE MANAGEMENT
+        // ============================================================================
+
+        let hasUnsavedChanges = false;
+
+        // Warn before leaving with unsaved changes
+        window.addEventListener('beforeunload', (event) => {
+            if (hasUnsavedChanges) {
+                event.preventDefault();
+                event.returnValue = 'Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter ?';
+                return event.returnValue;
+            }
+        });
+
+        // Track changes in attendance
+        function trackChanges() {
+            hasUnsavedChanges = true;
+        }
+
+        // ============================================================================
+        // UTILITY FUNCTIONS
+        // ============================================================================
+
+        /**
+         * Show toast notification
+         * @param {string} message - The message to display
+         * @param {string} type - Type of toast (success, error, warning)
+         */
+        function showToast(message, type = TOAST_TYPES.SUCCESS) {
+            // Remove existing toasts
+            const existingToasts = document.querySelectorAll('.toast');
+            existingToasts.forEach(toast => toast.remove());
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, CONFIG.TOAST_DURATION);
+        }
+
+        /**
+         * Show/hide loading state on button
+         * @param {HTMLButtonElement} button - The button element
+         * @param {boolean} isLoading - Whether to show loading state
+         */
+        function setLoadingState(button, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                button.dataset.originalText = button.textContent;
+                button.innerHTML = button.textContent + ' <span class="loader"></span>';
+            } else {
+                button.disabled = false;
+                button.textContent = button.dataset.originalText || button.textContent;
+            }
+        }
+
+        /**
+         * Validate email format
+         * @param {string} email - Email to validate
+         * @returns {boolean} - Whether email is valid
+         */
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+
+        /**
+         * Get dynamic column keys from user data
+         * @param {Object} userData - User data object
+         * @returns {Array} - Array of column keys (excluding Email, Nom, Equipe)
+         */
+        function getDynamicColumns(userData) {
+            return Object.keys(userData).filter(key =>
+                key !== 'Email' && key !== 'Nom' && key !== 'Equipe'
+            );
+        }
+
+        /**
+         * Create calendar rows with dynamic columns (vertical layout)
+         * @param {Object} userData - User data object
+         * @param {Array} columns - Array of column names
+         * @returns {Array} - Array of table row elements
+         */
+        function createCalendarRows(userData, columns) {
+            const rows = [];
+
+            columns.forEach(column => {
+                const row = document.createElement('tr');
+
+                // Left cell: Week name
+                const weekCell = document.createElement('td');
+                weekCell.textContent = column;
+                weekCell.style.fontWeight = '500';
+                row.appendChild(weekCell);
+
+                // Right cell: Radio buttons
+                const presenceCell = document.createElement('td');
+                const cellDiv = document.createElement('div');
+                cellDiv.className = 'checkboxes';
+
+                // Get current value and normalize it for comparison
+                const currentValue = userData[column] ? String(userData[column]).trim() : '';
+
+                const absentRadio = document.createElement('input');
+                absentRadio.type = 'radio';
+                absentRadio.name = `attendance-${column}`;
+                absentRadio.value = ATTENDANCE_STATUS.ABSENT;
+                absentRadio.checked = currentValue === ATTENDANCE_STATUS.ABSENT;
+                absentRadio.setAttribute('aria-label', `Absent ${column}`);
+                absentRadio.addEventListener('change', trackChanges);
+
+                const absentLabel = document.createElement('label');
+                absentLabel.textContent = 'Absent(e)';
+                absentLabel.style.marginLeft = '5px';
+                absentLabel.style.marginRight = '15px';
+
+                const presentRadio = document.createElement('input');
+                presentRadio.type = 'radio';
+                presentRadio.name = `attendance-${column}`;
+                presentRadio.value = ATTENDANCE_STATUS.PRESENT;
+                presentRadio.checked = currentValue === ATTENDANCE_STATUS.PRESENT;
+                presentRadio.setAttribute('aria-label', `Présent ${column}`);
+                presentRadio.addEventListener('change', trackChanges);
+
+                const presentLabel = document.createElement('label');
+                presentLabel.textContent = 'Présent(e)';
+                presentLabel.style.marginLeft = '5px';
+
+                cellDiv.appendChild(absentRadio);
+                cellDiv.appendChild(absentLabel);
+                cellDiv.appendChild(presentRadio);
+                cellDiv.appendChild(presentLabel);
+                presenceCell.appendChild(cellDiv);
+                row.appendChild(presenceCell);
+
+                rows.push(row);
+            });
+
+            return rows;
+        }
+
+
+        // ============================================================================
+        // MAIN FUNCTIONS
+        // ============================================================================
+
+        /**
+         * Submit email and fetch user data
+         */
+        async function submitEmail() {
+            const emailInput = document.getElementById('email');
+            const email = emailInput.value.trim();
+            const submitButton = document.getElementById('submit-email-btn');
+
+            if (!email) {
+                showToast('Veuillez entrer un email.', TOAST_TYPES.ERROR);
+                emailInput.focus();
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showToast('Veuillez entrer un email valide.', TOAST_TYPES.ERROR);
+                emailInput.focus();
+                return;
+            }
+
+            setLoadingState(submitButton, true);
+
+            try {
+                const url = `${CONFIG.API_URL}/search?Email=${encodeURIComponent(email)}`;
+
+                const response = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Cache-Control": "no-cache"
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.length > 0) {
+                    const user = data[0];
+                    localStorage.setItem('userEmail', email);
+                    localStorage.setItem('userName', user.Nom);
+
+                    document.getElementById('step1').style.display = 'none';
+                    document.getElementById('step2').style.display = 'block';
+
+                    document.querySelector('#calendar-title').textContent = `Calendrier de Présence de : ${user.Nom} (${user.Equipe})`;
+
+                    generateCalendar(user);
+                    showToast(`Bienvenue ${user.Nom} !`, TOAST_TYPES.SUCCESS);
+                } else {
+                    showToast('Aucun utilisateur trouvé avec cet email.', TOAST_TYPES.ERROR);
+                    emailInput.focus();
+                }
+            } catch (error) {
+                console.error('Erreur lors de la récupération des données :', error);
+                showToast('Erreur de connexion au serveur. Veuillez réessayer.', TOAST_TYPES.ERROR);
+            } finally {
+                setLoadingState(submitButton, false);
+            }
+        }
+
+        /**
+         * Generate calendar based on user data
+         * @param {Object} userData - User attendance data
+         */
+        function generateCalendar(userData) {
+            const calendarHeader = document.getElementById('calendar-header');
+            const calendarBody = document.getElementById('calendar-body');
+            calendarHeader.innerHTML = '';
+            calendarBody.innerHTML = '';
+
+            // Get dynamic columns from API response
+            const columns = getDynamicColumns(userData);
+
+            // Create table header with two columns: "Semaines" and "Présences"
+            const headerRow = document.createElement('tr');
+
+            const semaineTh = document.createElement('th');
+            semaineTh.scope = 'col';
+            semaineTh.textContent = 'Semaines';
+            headerRow.appendChild(semaineTh);
+
+            const presenceTh = document.createElement('th');
+            presenceTh.scope = 'col';
+            presenceTh.textContent = 'Présences';
+            headerRow.appendChild(presenceTh);
+
+            calendarHeader.appendChild(headerRow);
+
+            // Create rows with weeks and presence options
+            const dataRows = createCalendarRows(userData, columns);
+            dataRows.forEach(row => calendarBody.appendChild(row));
+        }
+
+        /**
+         * Submit attendance data
+         */
+        async function submitAttendance() {
+            const email = localStorage.getItem('userEmail');
+            const submitButton = document.getElementById('submit-attendance-btn');
+            const attendanceData = {};
+
+            // Get all radio inputs
+            const allRadios = document.querySelectorAll('#calendar-body input[type="radio"]');
+
+            allRadios.forEach(radio => {
+                if (radio.checked) {
+                    // Extract column name from the radio name attribute
+                    const columnName = radio.name.replace('attendance-', '');
+                    attendanceData[columnName] = radio.value;
+                }
+            });
+
+            setLoadingState(submitButton, true);
+
+            try {
+                const response = await fetch(`${CONFIG.API_URL}/Email/${encodeURIComponent(email)}`, {
+                    method: "PATCH",
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    body: JSON.stringify({
+                        data: attendanceData
+                    })
+                });
+
+                if (response.ok) {
+                    hasUnsavedChanges = false;
+                    showToast('Données enregistrées avec succès !', TOAST_TYPES.SUCCESS);
+                } else {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour :', error);
+                showToast('Erreur lors de l\'enregistrement. Veuillez réessayer.', TOAST_TYPES.ERROR);
+            } finally {
+                setLoadingState(submitButton, false);
+            }
+        }
+
+        // ============================================================================
+        // EVENT LISTENERS
+        // ============================================================================
+
+        // Allow Enter key to submit email
+        document.addEventListener('DOMContentLoaded', () => {
+            const emailInput = document.getElementById('email');
+            emailInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    submitEmail();
+                }
+            });
+        });
+
+    </script>
+
+</body>
+</html>
